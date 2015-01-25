@@ -64,19 +64,19 @@ In order to best determine which model to choose to predict "classe", I chose to
 graph some of the predictors in a feature plot.
 
 ```{r}
-library(ggplot2)
+library(ggplot2); library(caret)
 #selecting a few of the more promising predictors to be plotted
-col_selection1<- c("roll_belt","pitch_belt", "yaw_belt", "roll_arm", "pitch_arm","yaw_arm", "roll_dumbbell", "pitch_dumbbell","yaw_dumbbell", "roll_forearm", "pitch_forearm", "yaw_forearm")
+colSelection<- c("roll_belt","pitch_belt", "yaw_belt", "roll_arm", "pitch_arm",
+                 "yaw_arm")
 
-#creating a feature plot, which I will not run within this .rmd file since it 
-#it takes a long time to run, but I will insert the plot into the report separately.  
-#featurePlot(x=training[,col_selection1],
-#           y = training$classe,
-#           plot="pairs")
+#creating a feature plot 
+featurePlot(x=training[,colSelection],
+           y = training$classe,
+          plot="pairs")
 
 ```
 
-In order to closer examine some of these plots, I plotted many of them separately, here is an example of a close-up:
+In order to closer examine the feature plot, I plotted many of them separately, here is an example of a close-up:
 
 ```{r}
 qplot(roll_belt, roll_forearm, colour=classe, data=training)
@@ -100,7 +100,8 @@ The first 7 variables in the training data set are:
 
 `r names(training)[1:7]`,
 
-which I removed from the data set since they are not relevant towards predicting "classe." So, 
+I removed these from the data set since they were not relevant towards predicting "classe".  The removed variables included the time stamp ones as well,  since I did not 
+inted to do a time series analysis.
 
 ```{r}
 training <- training[,-c(1,2,3,4,5,6,7)]
@@ -142,7 +143,7 @@ I used a for loop to set up cross validation using random subsampling to fit thr
 random forest models to random subsets of the training data, called "trainingSet". I then used these models to predict the "classe" variable of the testing subsets, called "testingSet".   I was hoping for an out of sample error of less than 20%.  
 
 ```{r}
-library(caret);library(randomForest)
+library(randomForest)
 first_seed <- 123355
 accuracies <-c()
 for (i in 1:3){
@@ -151,27 +152,28 @@ for (i in 1:3){
        trainIndex <- createDataPartition(y=training$classe, p=0.75, list=FALSE)
        trainingSet<- training[trainIndex,]
        testingSet<- training[-trainIndex,]
-      # modelFit <- randomForest(classe ~., data = trainingSet)
-       #prediction <- predict(modelFit, testingSet)
-       #testingSet$rightPred <- prediction == testingSet$classe
-       #t<-table(prediction, testingSet$classe)
-       #print(t)
-       #accuracy <- sum(testingSet$rightPred)/nrow(testingSet)
-       #accuracies <- c(accuracies,accuracy)
-       #print(accuracy)
+       modelFit <- randomForest(classe ~., data = trainingSet)
+       prediction <- predict(modelFit, testingSet)
+       testingSet$rightPred <- prediction == testingSet$classe
+       t<-table(prediction, testingSet$classe)
+       print(t)
+       accuracy <- sum(testingSet$rightPred)/nrow(testingSet)
+       accuracies <- c(accuracies,accuracy)
+       print(accuracy)
 }
-#accuracies
-#mean(accuracies)
+accuracies
+mean(accuracies)
 ```
 
-The mean accuracy of these models turned out to be `r .99`, which is 
+The mean accuracy of these models turned out to be `r mean(accuracies)`, which is 
 a good estimate of the out of sample error.  
 
 
 
 ##Applying the Random Forest Model to the 20 Test Cases
 
-Here is the model again, recalculated (I did not know how to save the model I created in the for loop) using the original first_seed value.
+I fit a random forest model to the entire training data set this time, and I used the
+model to predict the "classe" variable for the 20 test cases in the testing data set.
 
 ```{r}
 
